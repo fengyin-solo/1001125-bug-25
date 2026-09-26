@@ -20,13 +20,34 @@ STATUSES = ["待核算", "已核算", "已对账", "已开票"]
 def list_entries(
     keyword: str | None = Query(default=None, description="按计费单号检索"),
     status: str | None = Query(default=None, description="待核算、已核算、已对账、已开票"),
+    overdue: bool = Query(default=False, description="只看超过免费堆存期的计费单"),
     page: int = 1,
     size: int = 20,
 ) -> PageResult[dict]:
-    """按计费单号与状态过滤堆存计费列表；没有数据时返回空页，不报错。"""
+    """按计费单号、状态、超免堆期过滤堆存计费列表；没有数据时返回空页，不报错。"""
     if size > 200:
         raise HTTPException(status_code=400, detail="每页最多 200 条，请缩小分页范围")
-    items, total = service.list_entries(keyword=keyword, status=status, page=page, size=size)
+    items, total = service.list_entries(
+        keyword=keyword, status=status, overdue_only=overdue, page=page, size=size
+    )
+    return PageResult(items=items, total=total, page=page, size=size)
+
+
+@router.get("/stats", response_model=dict)
+def storage_stats() -> dict[str, Any]:
+    """堆存计费统计：待核算、超免堆期、账单应收合计。"""
+    return service.stats()
+
+
+@router.get("/overdue", response_model=PageResult[dict])
+def list_overdue(
+    page: int = 1,
+    size: int = 20,
+) -> PageResult[dict]:
+    """把超过免费堆存期的计费单都挑出来，提示列会逐条说明超期原因。"""
+    if size > 200:
+        raise HTTPException(status_code=400, detail="每页最多 200 条，请缩小分页范围")
+    items, total = service.list_entries(overdue_only=True, page=page, size=size)
     return PageResult(items=items, total=total, page=page, size=size)
 
 
@@ -50,12 +71,14 @@ def create_entry(payload: EntryPayload) -> ActionResult:
 
 @router.post("/{entry_id}/actions", response_model=ActionResult)
 def run_action(entry_id: int, payload: EntryPayload) -> ActionResult:
-    """对单条计费单执行生成账单、确认对账、开具发票；不允许的动作会被拦下并说明原因。"""
+    """对单条计费单执行生成账单、确认对账、开具发票；不允许的动作会被拦下并说明原因。
+
+    生成账单有完整边界校验（计费周期、计费标准、堆存天数、金额），且同一张计费单
+    重复生成只会返回同一条账单；校验不通过时已填内容原样保留，可补全后重试。
+    """
     action = str(payload.values.get("action") or "").strip()
-    entry, message = service.run_action(entry_id, action)
-    if entry is None:
-        return ActionResult(ok=False, message=message)
-    return ActionResult(ok=True, message=message, entry=entry)
+    entry, message, ok = service.run_action(entry_id, action)
+    return ActionResult(ok=ok, message=message, entry=entry)
 
 
 @router.get("/export")

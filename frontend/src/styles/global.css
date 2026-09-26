@@ -33,3 +33,22 @@ body { margin: 0; background: #f6f8fb; color: #1f2937; }
 .link { border: none; background: none; color: var(--brand); cursor: pointer; padding: 0; }
 .page-foot { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--muted); }
 .error-text { color: #b42318; }
+.success-text { color: #067647; }
+.warn-text { color: #b54708; }
+.notice-text { margin: 0 0 10px; padding: 8px 10px; border-radius: 6px; font-size: 13px; background: #f8fafc; border: 1px solid var(--border); }
+.notice-text.success-text { background: #ecfdf3; border-color: #abefc6; }
+.notice-text.warn-text { background: #fffaeb; border-color: #fedf89; }
+.notice-text.error-text { background: #fef3f2; border-color: #fda29b; }
+.filter-check { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); }
+.status-tag { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; }
+.status-pending { background: #f2f4f7; color: #475467; }
+.status-billed { background: #eff8ff; color: #175cd3; }
+.status-reconciled { background: #fffaeb; color: #b54708; }
+.status-invoiced { background: #ecfdf3; color: #067647; }
+.bill-no { color: var(--muted); font-size: 12px; }
+.hint-text { font-size: 12px; color: #475467; }
+.hint-text.hint-warn { color: #b54708; }
+tr.row-overdue td { background: #fffaeb; }
+tr.row-overdue td:last-child { background: #fffaeb; }
+.action-done { color: var(--muted); font-size: 12px; }
+.link:disabled { color: #98a2b3; cursor: wait; }
